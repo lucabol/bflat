@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+namespace Sys;
+
 unsafe public static class Libc
 {
     #if WINDOWS

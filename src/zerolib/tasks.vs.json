@@ -1,0 +1,18 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskName": "Build Dbg",
+      "appliesTo": "/",
+      "type": "launch",
+      "contextType": "build",
+      "command": "bflat",
+      "args": [
+        "build",
+        "-O0",
+        "--stdlib:none",
+        "-o Hello.exe"
+      ]
+    }
+  ]
+}

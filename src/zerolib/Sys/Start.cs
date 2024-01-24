@@ -64,11 +64,7 @@ unsafe partial class StartupCodeHelpers
         static extern char** CommandLineToArgvW(char* lpCmdLine, int* pNumArgs);
 
         var args = GetMainMethodArguments();
-        return Test();//[(byte)'O', (byte)'K'];//EncodeToUtf8(args[i]);
+        return EncodeToUtf8(args[i]);
     #endif
-    }
-    public static ReadOnlySpan<byte> Test()
-    {
-        return new ReadOnlySpan<byte>(_commandLine, 0, 3);
     }
 }

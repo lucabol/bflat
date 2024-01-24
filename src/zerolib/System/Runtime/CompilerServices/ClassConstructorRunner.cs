@@ -38,6 +38,11 @@ namespace System.Runtime.CompilerServices
                 ((delegate*<void>)address)();
             }
         }
+        private static unsafe object CheckStaticClassConstructionReturnGCStaticBase(ref StaticClassConstructionContext context, object gcStaticBase)
+        {
+            CheckStaticClassConstruction(ref context);
+            return gcStaticBase;
+        }
     }
 
     // This data structure is a contract with the compiler. It holds the address of a static

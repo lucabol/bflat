@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "bflat debug",
             "program": "${workspaceFolder}/Hello",
-            "args": [],
+            "args": ["Test"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
