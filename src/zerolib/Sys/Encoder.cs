@@ -1,20 +1,24 @@
 using System;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
-namespace Internal.Runtime.CompilerHelpers;
+namespace Sys;
 
-unsafe partial class StartupCodeHelpers
+public static class Encoder
 {
     // https://stackoverflow.com/questions/9115279/commandline-argument-parameter-limitation
     const int MAX_COMMAND_LINE_LENGTH = 8192;
-    static byte[] _commandLine = new byte[MAX_COMMAND_LINE_LENGTH];
+
+    [System.Runtime.CompilerServices.InlineArray(MAX_COMMAND_LINE_LENGTH)]
+    struct Buffer { private byte _element0; }
+    static Buffer _commandLine;
     static int _index = 0;
 
     // This is what Github Copilot suggested, slightly modified to use a string pool and to avoid allocations.
-    static ReadOnlySpan<byte> EncodeToUtf8(string str)
+    public unsafe static ReadOnlySpan<byte> EncodeToUtf8(string str)
     {
-        var start = _index;        
+        int start = _index;        
 
         for(var i = 0; i < str.Length; i++)
         {
@@ -43,28 +47,8 @@ unsafe partial class StartupCodeHelpers
             }
         }
 
-        return new ReadOnlySpan<byte>(_commandLine, start, _index - start);
-    }
-
-    public static ReadOnlySpan<byte> GetCommandLineArg(int i)
-    {
-
-    #if LINUX
-    #endif
-
-    #if WINDOWS
-
-        int argc;
-        char** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-
-        [DllImport("kernel32"), SuppressGCTransition]
-        static extern char* GetCommandLineW();
-
-        [DllImport("shell32"), SuppressGCTransition]
-        static extern char** CommandLineToArgvW(char* lpCmdLine, int* pNumArgs);
-
-        var args = GetMainMethodArguments();
-        return EncodeToUtf8(args[i]);
-    #endif
+        var len = _index - start;
+        var cmd = _commandLine[0];
+        return new ReadOnlySpan<byte>(Unsafe.AsPointer(ref _commandLine[0]), len);
     }
 }

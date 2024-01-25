@@ -47,6 +47,15 @@ unsafe public static class Libc
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern int printf(byte* format, int arg, byte* arg2);
 
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern int strlen(byte* s);
+
+    public static int Strlen(char* wcs)
+    {
+        var len = strlen((byte*) wcs);
+        return len * 2;
+    }
+
     public static int Puts(ReadOnlySpan<byte> s)
     {
         unsafe

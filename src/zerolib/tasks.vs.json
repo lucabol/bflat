@@ -3,7 +3,7 @@
   "tasks": [
     {
       "taskName": "Build Dbg",
-      "appliesTo": "/",
+      "appliesTo": "*",
       "type": "launch",
       "contextType": "build",
       "command": "bflat",

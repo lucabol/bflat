@@ -18,7 +18,7 @@ using System.Runtime.CompilerServices;
 
 namespace System.Runtime.InteropServices
 {
-    public static class MemoryMarshal
+    public static partial class MemoryMarshal
     {
         [Intrinsic]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
