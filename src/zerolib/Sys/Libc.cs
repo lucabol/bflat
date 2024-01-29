@@ -7,6 +7,9 @@ unsafe public static class Libc
 {
     #if WINDOWS
         const string libc = "msvcrt";
+        // I can't make ucrtbase.dll work, so I'm using msvcrt.dll instead.
+        //const string libc = "ucrtbase.dll";
+        //const string libc = "api-ms-win-crt-stdio-l1-1-0";
     #else
         const string libc = "libc";
     #endif

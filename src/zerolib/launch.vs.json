@@ -13,7 +13,11 @@
       "project": "Hello.exe",
       "projectTarget": "",
       "name": "Hello.exe Arg",
-      "args": ["Arg"]
+      "args": [
+        "Arg1",
+        "«ταБЬℓσ»",
+        "Arg2"
+      ]
     }
   ]
 }
