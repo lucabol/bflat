@@ -35,6 +35,9 @@ unsafe public static class Libc
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern int ferror(IntPtr stream);
 
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern unsafe int fwrite(byte* ptr, int size, int count, IntPtr stream);
+
     public unsafe static int Puts(Str8 s)
     {
         // The span might not be zero terminated, so we need to pass the length.
@@ -60,6 +63,12 @@ unsafe public static class Libc
     {
         fixed (byte* ptr = &buf[0])
             return fread(ptr, size, count, stream);
+    }
+
+    public unsafe static int FWrite(Str8 content, int size, int count, IntPtr stream)
+    {
+        fixed (byte* ptr = &content[0])
+            return fwrite(ptr, size, count, stream);
     }
 
     public static int FClose(IntPtr stream) => fclose(stream);

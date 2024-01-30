@@ -22,4 +22,20 @@ public static partial class File
         return System.Runtime.InteropServices
             .MemoryMarshal.CreateReadOnlySpan(ref buf[0], len);
     }
+
+    public static void Flush(Str8 path, Str8 content)
+    {
+        var fd = Libc.FOpen(path, "w"u8);
+
+        if(fd == 0)
+            System.Environment.FailFast("Can't open file");
+
+        var len = Libc.FWrite(content, 1, content.Length, fd);
+
+        if(Libc.FError(fd) != 0)
+            System.Environment.FailFast("Error writing file");
+
+        if(Libc.FClose(fd) != 0)
+            System.Environment.FailFast("Error closing file");
+    }
 }

@@ -1,4 +1,4 @@
-// Look ma, no System ...
+// Look ma, no System, no 'new' ...
 using Sys;
 using static Sys.Console;
 
@@ -20,10 +20,16 @@ WriteLine("[+] CAN CREATE AND PRINT ASCII UTF8 LITERAL STRINGS."u8);
 var s1 = "A string"u8;
 WriteLine(s1);
 
-WriteLine("\n[+] CAN SLURP A FILE."u8);
-var text = File.Slurp("Hello.cs"u8, Statics.InFile);
-if(text.Length > 0) WriteLine("Yep, I read more than 0 UTF8 chars, possibly the right ones."u8);
-else WriteLine("ERROR: just read 0 bytes???"u8);
+WriteLine("\n[+] CAN FLUSH AND SLURP A FILE."u8);
+var filename = "test.txt"u8;
+var msg = "Hello from bflat!"u8;
+
+File.Flush(filename, msg);
+WriteLine("Wrote message to file."u8);
+
+var text = File.Slurp(filename, Statics.InFile);
+if(msg.Equals(text)) WriteLine("Read same message from file."u8);
+else WriteLine("ERROR: different message??"u8);
 
 static class Statics
 {

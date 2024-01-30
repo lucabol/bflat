@@ -2,13 +2,26 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Sys;
 
-namespace System
+namespace Sys
 {
     public static partial class SpanUtils
     {
         // Workaround for lack of implicit conversions from Span<T> to ReadOnlySpan<T>.
         // ZERO: add the above to Span or make Span/ROSpan partial classes.
         public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(this System.Span<T> span) => MemoryMarshal.CreateReadOnlySpan(ref span[0], span.Length);
+
+        // ZERO: add '==' to Span or make Span/ROSpan partial classes.
+        public static bool Equals(this Str8 span, Str8 other)
+        {
+            if (span.Length != other.Length)
+                return false;
+
+            for (var i = 0; i < span.Length; i++)
+                if (span[i] != other[i])
+                    return false;
+
+            return true;
+        }
     }
     // Printing Utf8 directly
     public static unsafe partial class Console
@@ -70,7 +83,7 @@ namespace Internal.Runtime.CompilerHelpers
 
 
         // It is the only 'hook point' to get code to execute at the start of the process (i.e., to set the console code page).
-        static StartupCodeHelpers() => System.Console.SetUtf8();
+        static StartupCodeHelpers() => Sys.Console.SetUtf8();
 
         public static string[] GetArgs() => GetMainMethodArguments();
     }
