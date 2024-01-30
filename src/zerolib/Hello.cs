@@ -31,6 +31,8 @@ var text = File.Slurp(filename, Statics.InFile);
 if(msg.Equals(text)) WriteLine("Read same message from file."u8);
 else WriteLine("ERROR: different message??"u8);
 
+// It seems that I cannot create an automatic buffer for the file, so I need to create a static one.
+// ZERO: should be fixed, I think.
 static class Statics
 {
     public static Buffers.K8_Buffer<byte> InFile; 
