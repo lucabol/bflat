@@ -15,34 +15,10 @@ unsafe public static class Libc
     #endif
 
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int puts(byte* s);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern IntPtr fopen(byte* filename, byte* mode);
 
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern int fclose(IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int fputc(int c, IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int fputs(byte* str, IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int fgetc(IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern IntPtr fgets(byte* str, int num, IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int feof(IntPtr stream);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int fseek(IntPtr stream, long offset, int origin);
-
-    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern long ftell(IntPtr stream);
 
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern int fflush(IntPtr stream);
@@ -51,100 +27,42 @@ unsafe public static class Libc
     private static extern int printf(byte* format, int arg, byte* arg2);
 
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
-    private static extern int strlen(byte* s);
+    private static extern unsafe int fread(byte* ptr, int size, int count, IntPtr stream);
 
-    public static int Strlen(char* wcs)
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern int feof(IntPtr stream);
+    
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern int ferror(IntPtr stream);
+
+    public unsafe static int Puts(Str8 s)
     {
-        var len = strlen((byte*) wcs);
-        return len * 2;
+        // The span might not be zero terminated, so we need to pass the length.
+        // For how to pass a dynamic length string to printf,
+        // see: https://stackoverflow.com/questions/2239519/is-there-a-way-to-specify-how-many-characters-of-a-string-to-print-out-using-pri
+        // TODO: this if statement is a hack, we should fix this properly.
+        if(s.Length == 0)
+            fixed (byte* format = &("\n"u8)[0])
+                return printf(format,0,(byte*)0);
+
+        fixed (byte* b = &s[0], format = &("%.*s\n"u8)[0])
+            return printf(format, s.Length, b);
+    }
+    public static int Puts(Buf8 s) => Puts(s.AsReadOnlySpan());
+
+    public unsafe static IntPtr FOpen(Str8 filename, Str8 mode)
+    {
+        fixed (byte* filenamePtr = &filename[0], modePtr = &mode[0])
+            return fopen(filenamePtr, modePtr);
     }
 
-    public static int Puts(ReadOnlySpan<byte> s)
+    public unsafe static int FRead(Buf8 buf, int size, int count, IntPtr stream)
     {
-        unsafe
-        {
-            // The span might not be zero terminated, so we need to pass the length.
-            // For how to pass a dynamic length string to printf,
-            // see: https://stackoverflow.com/questions/2239519/is-there-a-way-to-specify-how-many-characters-of-a-string-to-print-out-using-pri
-            // TODO: this if statement is a hack, we should fix this properly.
-            if(s.Length == 0)
-                fixed (byte* format = &("\n"u8)[0])
-                    return printf(format,0,(byte*)0);
-
-            fixed (byte* b = &s[0], format = &("%.*s\n"u8)[0])
-                return printf(format, s.Length, b);
-        }
-    }
-    public static int Puts(Span<byte> s) => Puts(s.AsReadOnlySpan());
-
-    public static IntPtr FOpen(ReadOnlySpan<byte> filename, ReadOnlySpan<byte> mode)
-    {
-        unsafe
-        {
-            fixed (byte* filenamePtr = &filename[0])
-            fixed (byte* modePtr = &mode[0])
-            {
-                return fopen(filenamePtr, modePtr);
-            }
-        }
+        fixed (byte* ptr = &buf[0])
+            return fread(ptr, size, count, stream);
     }
 
-    public static int FClose(IntPtr stream)
-    {
-        return fclose(stream);
-    }
-
-    public static int FPutc(int c, IntPtr stream)
-    {
-        return fputc(c, stream);
-    }
-
-    public static int FPuts(ReadOnlySpan<byte> str, IntPtr stream)
-    {
-        unsafe
-        {
-            fixed (byte* strPtr = &str[0])
-            {
-                return fputs(strPtr, stream);
-            }
-        }
-    }
-
-    public static int FGetc(IntPtr stream)
-    {
-        return fgetc(stream);
-    }
-
-    public static IntPtr FGets(ReadOnlySpan<byte> str, int num, IntPtr stream)
-    {
-        unsafe
-        {
-            fixed (byte* strPtr = &str[0])
-            {
-                return fgets(strPtr, num, stream);
-            }
-        }
-    }
-
-    public static int Feof(IntPtr stream)
-    {
-        return feof(stream);
-    }
-
-    public static int FSeek(IntPtr stream, long offset, int origin)
-    {
-        return fseek(stream, offset, origin);
-    }
-
-    public static long FTell(IntPtr stream)
-    {
-        return ftell(stream);
-    }
-
-    public static int FFlush(IntPtr stream)
-    {
-        return fflush(stream);
-    }
-
-
+    public static int FClose(IntPtr stream) => fclose(stream);
+    public static int FEof  (IntPtr stream) => feof(stream);
+    public static int FError(IntPtr stream) => ferror(stream);
 }

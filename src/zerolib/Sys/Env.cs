@@ -2,7 +2,9 @@ namespace Sys;
 
 /*
  * In the spirit of no-allocation, I need to cache the command line arguments converted to utf8 because they could be accessed multiple times
- * and I cannot 'new' them.
+ * and I cannot 'new' them. Also, to be consistent with the other APIs in Sys, the user should pass the buffer for the command line arguments.
+ * In this case, I use an internal buffer instead because in most programming models, args are ready to use at startup.
+ * The buffer could be avoided in Unix as you get the commands in UTF8 format, but not in Windows where they came in as UTF16.
  */
 
 public static partial class Env
@@ -11,6 +13,7 @@ public static partial class Env
     static Buffers.K8_Buffer<byte> _commandLine;
     static Buffers.K_Buffer<int> _indexes;
 
+    // -1 means not initialized. Rejoice, we saved one byte for the bool, but wasted some Kbs for the _commandLine buffer.
     static int _argc = -1;
 
     static void FillCommandLineCache()

@@ -19,3 +19,13 @@ WriteLine(u8s);
 WriteLine("[+] CAN CREATE AND PRINT ASCII UTF8 LITERAL STRINGS."u8);
 var s1 = "A string"u8;
 WriteLine(s1);
+
+WriteLine("\n[+] CAN SLURP A FILE."u8);
+var text = File.Slurp("Hello.cs"u8, Statics.InFile);
+if(text.Length > 0) WriteLine("Yep, I read more than 0 UTF8 chars, possibly the right ones."u8);
+else WriteLine("ERROR: just read 0 bytes???"u8);
+
+static class Statics
+{
+    public static Buffers.K8_Buffer<byte> InFile; 
+}
