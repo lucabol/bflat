@@ -8,7 +8,7 @@ namespace System
     {
         // Workaround for lack of implicit conversions from Span<T> to ReadOnlySpan<T>.
         // ZERO: add the above to Span or make Span/ROSpan partial classes.
-        public static ReadOnlySpan<T> AsReadOnlySpan<T>(this Span<T> span) => MemoryMarshal.CreateReadOnlySpan(ref span[0], span.Length);
+        public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(this System.Span<T> span) => MemoryMarshal.CreateReadOnlySpan(ref span[0], span.Length);
     }
     // Printing Utf8 directly
     public static unsafe partial class Console
@@ -30,9 +30,6 @@ namespace System
         #endif
         }
 
-        // Again, lack of implicit Span -> ROSPan conversion.
-        public static void WriteLine(ReadOnlySpan<byte> s) => Libc.Puts(s);
-        public static void WriteLine(Span<byte> s) => Libc.Puts(s);
     }
 }
 
@@ -57,10 +54,12 @@ namespace System.Runtime.InteropServices
     {
         // I believe the method below is needed by the compiler for the C# inline array feature, but I don't remember exactly.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static Span<T> CreateSpan<T>(ref T reference, int length) => new Span<T>(Unsafe.AsPointer(ref reference), length);
+        public unsafe static System.Span<T> CreateSpan<T>(ref T reference, int length)
+            => new System.Span<T>(Unsafe.AsPointer(ref reference), length);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static ReadOnlySpan<T> CreateReadOnlySpan<T>(ref T reference, int length) => new ReadOnlySpan<T>(Unsafe.AsPointer(ref reference), length);
+        public unsafe static System.ReadOnlySpan<T> CreateReadOnlySpan<T>(ref T reference, int length)
+            => new System.ReadOnlySpan<T>(Unsafe.AsPointer(ref reference), length);
     }
 }
 

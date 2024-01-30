@@ -1,14 +1,9 @@
-using System;
-using System.Runtime;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-
 namespace Sys;
 
 // Tested on exactly one example, so it's certainly correct.
 public static class Encoder
 {
-    public unsafe static Span<byte> Utf16ToUtf8(string str, Span<byte> buffer)
+    public unsafe static Buf8 Utf16ToUtf8(string str, Buf8 buffer)
     {
         var index = 0;
 
@@ -39,10 +34,10 @@ public static class Encoder
             }
         }
 
-        return MemoryMarshal.CreateSpan(ref buffer[0], index);
+        return System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref buffer[0], index);
     }
 
-    public unsafe static Span<char> Utf8ToUtf16(ReadOnlySpan<byte> utf8, Span<char> utf16)
+    public unsafe static Buf16 Utf8ToUtf16(Str8 utf8, Buf16 utf16)
     {
         int utf8Length = utf8.Length;
         int i = 0, j = 0;
@@ -82,7 +77,7 @@ public static class Encoder
             }
         }
 
-        return MemoryMarshal.CreateSpan(ref utf16[0], j); 
+        return System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref utf16[0], j); 
     }
 
 }

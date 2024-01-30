@@ -1,7 +1,3 @@
-using System;
-using Internal.Runtime.CompilerHelpers;
-using System.Runtime.InteropServices;
-
 namespace Sys;
 
 /*
@@ -19,14 +15,14 @@ public static partial class Env
 
     static void FillCommandLineCache()
     {
-        var args = StartupCodeHelpers.GetArgs();
+        var args = Internal.Runtime.CompilerHelpers.StartupCodeHelpers.GetArgs();
         _argc = args.Length;
         var index = 0;
 
         for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
-            var buf = MemoryMarshal.CreateSpan(ref _commandLine[index], 1024 * 8);
+            var buf = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref _commandLine[index], 1024 * 8);
 
             var utf8 = Encoder.Utf16ToUtf8(arg, buf);
             _indexes[i] = index;
@@ -34,17 +30,17 @@ public static partial class Env
         }
     }
 
-    public static ReadOnlySpan<byte> Arg(int index)
+    public static Str8 Arg(int index)
     {
 
         if (_argc == -1)
             FillCommandLineCache();
 
         if(index < 0 || index >= _argc)
-            Environment.FailFast("Invalid index for command line arguments");
+            System.Environment.FailFast("Invalid index for command line arguments");
 
         var start = _indexes[index];
         var end = _indexes[index + 1];
-        return MemoryMarshal.CreateReadOnlySpan(ref _commandLine[start], end - start);
+        return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref _commandLine[start], end - start);
     } 
 }
