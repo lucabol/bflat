@@ -66,10 +66,16 @@ unsafe public static class Libc
             // The span might not be zero terminated, so we need to pass the length.
             // For how to pass a dynamic length string to printf,
             // see: https://stackoverflow.com/questions/2239519/is-there-a-way-to-specify-how-many-characters-of-a-string-to-print-out-using-pri
+            // TODO: this if statement is a hack, we should fix this properly.
+            if(s.Length == 0)
+                fixed (byte* format = &("\n"u8)[0])
+                    return printf(format,0,(byte*)0);
+
             fixed (byte* b = &s[0], format = &("%.*s\n"u8)[0])
                 return printf(format, s.Length, b);
         }
     }
+    public static int Puts(Span<byte> s) => Puts(s.AsReadOnlySpan());
 
     public static IntPtr FOpen(ReadOnlySpan<byte> filename, ReadOnlySpan<byte> mode)
     {
