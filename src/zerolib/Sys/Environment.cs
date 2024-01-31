@@ -7,7 +7,7 @@ namespace Sys;
  * The buffer could be avoided in Unix as you get the commands in UTF8 format, but not in Windows where they came in as UTF16.
  */
 
-public static partial class Env
+public static partial class Environment
 {
     // https://stackoverflow.com/questions/9115279/commandline-argument-parameter-limitation
     static Buffers.K8_Buffer<byte> _commandLine;
@@ -15,6 +15,16 @@ public static partial class Env
 
     // -1 means not initialized. Rejoice, we saved one byte for the bool, but wasted some Kbs for the _commandLine buffer.
     static int _argc = -1;
+
+    public static int Argc
+    {
+        get
+        {
+            if(_argc == -1)
+                FillCommandLineCache();
+            return _argc;
+        }
+    }
 
     static void FillCommandLineCache()
     {

@@ -4,15 +4,15 @@
   "configurations": [
     {
       "type": "default",
-      "project": "Hello.exe",
+      "project": "Main.exe",
       "projectTarget": "",
-      "name": "Hello.exe"
+      "name": "Main.exe"
     },
     {
       "type": "default",
-      "project": "Hello.exe",
+      "project": "Main.exe",
       "projectTarget": "",
-      "name": "Hello.exe Arg",
+      "name": "Main.exe Arg",
       "args": [
         "Arg1",
         "«ταБЬℓσ»",

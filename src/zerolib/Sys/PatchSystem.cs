@@ -4,25 +4,6 @@ using Sys;
 
 namespace Sys
 {
-    public static partial class SpanUtils
-    {
-        // Workaround for lack of implicit conversions from Span<T> to ReadOnlySpan<T>.
-        // ZERO: add the above to Span or make Span/ROSpan partial classes.
-        public static System.ReadOnlySpan<T> AsReadOnlySpan<T>(this System.Span<T> span) => MemoryMarshal.CreateReadOnlySpan(ref span[0], span.Length);
-
-        // ZERO: add '==' to Span or make Span/ROSpan partial classes.
-        public static bool Equals(this Str8 span, Str8 other)
-        {
-            if (span.Length != other.Length)
-                return false;
-
-            for (var i = 0; i < span.Length; i++)
-                if (span[i] != other[i])
-                    return false;
-
-            return true;
-        }
-    }
     // Printing Utf8 directly
     public static unsafe partial class Console
     {
@@ -86,5 +67,14 @@ namespace Internal.Runtime.CompilerHelpers
         static StartupCodeHelpers() => Sys.Console.SetUtf8();
 
         public static string[] GetArgs() => GetMainMethodArguments();
+    }
+    // ZERO: I needed to make it partial in the code and add all the below to make it compiler. No idea what any of it means.
+    partial class ThrowHelpers
+    {
+        /*
+        public enum ExceptionStringID { }
+        public static void ThrowTypeLoadException(ExceptionStringID id, string className, string typeName) => System.Environment.FailFast(null);
+        public static void ThrowTypeLoadExceptionWithArgument(ExceptionStringID id, string className, string typeName, string messageArg) => System.Environment.FailFast(null);
+        */
     }
 }

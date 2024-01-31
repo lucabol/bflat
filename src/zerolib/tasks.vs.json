@@ -11,7 +11,7 @@
         "build",
         "-O0",
         "--stdlib:none",
-        "-o Hello.exe"
+        "-o Main.exe"
       ]
     }
   ]
