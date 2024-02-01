@@ -19,7 +19,7 @@ public static class MarkovGenerator
     {
         public Word_Tuple  PrefixWords;
         public int Next;
-        public int FirstPostfix;
+        public int FirstSuffix;
     }
     struct Suffix
     {
@@ -31,21 +31,54 @@ public static class MarkovGenerator
     // as done above for the Word_Buffer. That avoids keeping the constants in sync
     // at the expense of ugliness.
     /* KEEP THE CONSTANTS IN SYNC WITH THE BUFFER SIZES BELOW. */
-    const int NHASH = 1024 * 4; // size of state hash table array
-    static Buffers.K4_Buffer<Prefix>  Prefixes;
-    static Buffers.K4_Buffer<Suffix>  Postfixes;
-    static Buffers.M8_Buffer          Text;
+    const int NHASH     = Buffers.K16;
+    const int NPREFIXES = Buffers.K16;
+    const int NSUFFIXES = Buffers.K16;
+
+    static Buffers.K16_Buffer<int>     Hashes;
+    static Buffers.K16_Buffer<Prefix>  Prefixes;
+    static Buffers.K16_Buffer<Suffix>  Suffixes;
+    static Buffers.M8_Buffer           Text;
     static int TextLength;
 
-    static int PrefixNext;
+    static int PrefixNext = 1; // We use 0 as a sentinel value for empty prefixes.
     static int SuffixNext;
 
-    public unsafe static void Run(Str8 path, int nwords)
+    public static void Run(Str8 path, int nwords)
     {
-        File.Slurp(path, Text.Span);
+        var txt = File.Slurp(path, Text.Span);
+        TextLength = txt.Length;
+
+
         Build();
+        Debug();
     }
 
+    static void Debug()
+    {
+        for(var i = 0; i < NPREFIXES; i++)
+        {
+            var p = Prefixes[i];
+            if(IsPrefixEmpty(ref p))
+                continue;
+
+            for(var j = 0; j < NPREF; j++)
+            {
+                var w = MemToStr(p.PrefixWords[j]);
+                Console.Write(w);
+                Console.Write(" "u8);
+            }
+            Console.Write(" -> "u8);
+            
+            var sidx = p.FirstSuffix;
+            while(sidx != 0) { 
+                var s = Suffixes[sidx];
+                Console.Write(MemToStr(s.SuffixText));
+                sidx = s.Next;
+            }
+            Console.WriteLine(""u8);
+        }
+    }
     static Str8 MemToStr(Mem mem)
     {
         var buf = Text.Span.Slice(mem.Start, mem.End - mem.Start);
@@ -69,11 +102,13 @@ public static class MarkovGenerator
 
     static int Lookup(Word_Tuple words, bool create)
     {
-        var h = Hash(words);
-        ref var p = ref Prefixes[h];
+        var h1 = Hash(words);
+        var h  = Hashes[h1];
+        var sp = h;
 
-        while (!IsPrefixEmpty(ref p))
+        while(sp != 0)
         {
+            ref var p = ref Prefixes[sp];
             int i;
             for (i = 0; i < NPREF; i++)
             {
@@ -83,32 +118,30 @@ public static class MarkovGenerator
             }
 
             if(i == NPREF)
-                return h;
-            
-            h = p.Next;
-            p = ref Prefixes[h];
+                return sp;
+            sp = p.Next;
         }
 
         if(create)
         {
-            p = ref Prefixes[h];
+            sp = PrefixNext;
+            ref var p = ref Prefixes[sp];
             p.PrefixWords = words;
-            p.Next = PrefixNext;
+            p.Next = h;
+            Hashes[h1] = sp;
             PrefixNext++;
         }
-        return h;
+        return sp;
     }
     static void AddSuffix(int prefix, Mem suffix)
     {
-        ref var s = ref Postfixes[SuffixNext];
+        ref var s = ref Suffixes[SuffixNext];
         s.SuffixText = suffix;
 
         ref var p = ref Prefixes[prefix];
+        s.Next = p.FirstSuffix;
        
-        int oldFirst = p.FirstPostfix;
-        p.FirstPostfix = SuffixNext;
-        s.Next = oldFirst;
-
+        p.FirstSuffix = SuffixNext;
         SuffixNext++;
     }
     static void Add(Word_Tuple words, Mem suffix)
@@ -140,11 +173,13 @@ public static class MarkovGenerator
                if(word.Start == word.End)
                    return;
                 prefix[w] = word;
+                idx = word.End;
             }
             var suffix = GetWord(idx);
             if(suffix.Start == suffix.End)
                 return;
             Add(prefix, suffix);
+            idx = suffix.End;
         }
     }
 }

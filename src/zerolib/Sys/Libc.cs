@@ -38,7 +38,7 @@ unsafe public static class Libc
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern unsafe int fwrite(byte* ptr, int size, int count, IntPtr stream);
 
-    public unsafe static int Puts(Str8 s)
+    public unsafe static int Put(Str8 s)
     {
         // The span might not be zero terminated, so we need to pass the length.
         // For how to pass a dynamic length string to printf,
@@ -48,10 +48,12 @@ unsafe public static class Libc
             fixed (byte* format = &("\n"u8)[0])
                 return printf(format,0,(byte*)0);
 
-        fixed (byte* b = &s[0], format = &("%.*s\n"u8)[0])
+        fixed (byte* b = &s[0], format = &("%.*s"u8)[0])
             return printf(format, s.Length, b);
     }
-    public static int Puts(Buf8 s) => Puts(s.AsReadOnlySpan());
+    public static int Put(Buf8 s) => Puts(s.AsReadOnlySpan());
+    public static int Puts(Str8 s) { var n = Put(s); Put("\n"u8); return n + 1; }
+    public static int Puts(Buf8 s) { var n = Put(s); Put("\n"u8); return n + 1; }
 
     public unsafe static IntPtr FOpen(Str8 filename, Str8 mode)
     {
