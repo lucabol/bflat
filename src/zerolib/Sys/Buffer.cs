@@ -42,6 +42,7 @@ public static partial class Buffers
         } }
     }
 
+    // This is ergonomically nice, but it goes into the data segment, producing a huge binary.
     public unsafe struct HugeBuffer<T> where T: unmanaged
     {
         fixed byte _buf[M8];
@@ -51,7 +52,7 @@ public static partial class Buffers
         public ref T this[int index]
         {
             get {
-                if(index > Length)
+                if(index < 0 || index >= Length)
                     Sys.Environment.Fail("Index out of range"u8);
                 return ref Unsafe.Add(ref Unsafe.As<byte, T>(ref _buf[0]), index);
             }
