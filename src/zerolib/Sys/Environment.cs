@@ -55,5 +55,11 @@ public static partial class Environment
         var start = _indexes[index];
         var end = _indexes[index + 1];
         return System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref _commandLine[start], end - start);
-    } 
+    }
+
+    // FailFast doesn't print a the message??
+    public static void Fail(Str8 message) {
+        Console.WriteLine(message);
+        System.Environment.FailFast(default);
+    }
 }

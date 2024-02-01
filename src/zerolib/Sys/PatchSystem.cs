@@ -55,6 +55,8 @@ namespace System.Runtime.InteropServices
         public unsafe static System.ReadOnlySpan<T> CreateReadOnlySpan<T>(ref T reference, int length)
             => new System.ReadOnlySpan<T>(Unsafe.AsPointer(ref reference), length);
     }
+    // This is needed for the 'unmanaged' generic constraint of C#.
+    public enum UnmanagedType { }
 }
 
 namespace Internal.Runtime.CompilerHelpers

@@ -32,13 +32,11 @@ public static class MarkovGenerator
     // at the expense of ugliness.
     /* KEEP THE CONSTANTS IN SYNC WITH THE BUFFER SIZES BELOW. */
     const int NHASH     = Buffers.K16;
-    const int NPREFIXES = Buffers.K16;
-    const int NSUFFIXES = Buffers.K16;
 
     static Buffers.K16_Buffer<int>     Hashes;
-    static Buffers.K16_Buffer<Prefix>  Prefixes;
-    static Buffers.K16_Buffer<Suffix>  Suffixes;
-    static Buffers.M8_Buffer           Text;
+    static Buffers.HugeBuffer<Prefix>  Prefixes;
+    static Buffers.HugeBuffer<Suffix>  Suffixes;
+    static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a compiler error ...
     static int TextLength;
 
     static int PrefixNext = 1; // We use 0 as a sentinel value for empty prefixes.
@@ -49,14 +47,58 @@ public static class MarkovGenerator
         var txt = File.Slurp(path, Text.Span);
         TextLength = txt.Length;
 
-
         Build();
-        Debug();
+        Generate(nwords);
+        //Debug();
     }
 
+    static void Generate(int nwords)
+    {
+        var seed    = (uint)System.Environment.TickCount64;
+        Random rnd  = new (seed);
+        var prefix  = (int)rnd.Next() % PrefixNext;
+
+        for(var i = 0; i < nwords; i++)
+        {
+            var sidx = Prefixes[prefix].FirstSuffix;
+            if(sidx == 0)
+                Environment.Fail("Prefix without suffix"u8);
+
+            // Count the number of suffixes
+            var ns = 0;
+            while(sidx != 0)
+            {
+                ns++;
+                sidx = Suffixes[sidx].Next;
+            }
+
+            // Pick a random one
+            var idx = rnd.Next() % ns;
+            sidx = Prefixes[prefix].FirstSuffix;
+            while(idx > 0)
+            {
+                sidx = Suffixes[sidx].Next;
+                idx--;
+            }
+
+            var suffix = Suffixes[sidx].SuffixText;
+            var word = MemToStr(suffix);
+            Console.Write(word);
+            Console.Write(" "u8);
+
+            Word_Tuple newPrefix = default;
+            newPrefix[0] = Prefixes[prefix].PrefixWords[1];
+            newPrefix[1] = suffix;
+            prefix = Lookup(newPrefix, false);
+            if(prefix == 0)
+                Environment.Fail("No prefix with these two words"u8);
+        }
+        Console.WriteLine(""u8);
+    }
+    
     static void Debug()
     {
-        for(var i = 0; i < NPREFIXES; i++)
+        for(var i = 0; i < Prefixes.Length; i++)
         {
             var p = Prefixes[i];
             if(IsPrefixEmpty(ref p))
@@ -78,6 +120,8 @@ public static class MarkovGenerator
             }
             Console.WriteLine(""u8);
         }
+        Console.Write("PrefixNext: "u8); System.Console.WriteLine(PrefixNext);
+        Console.Write("SuffixNext: "u8); System.Console.WriteLine(SuffixNext);
     }
     static Str8 MemToStr(Mem mem)
     {
@@ -129,6 +173,10 @@ public static class MarkovGenerator
             p.PrefixWords = words;
             p.Next = h;
             Hashes[h1] = sp;
+
+            if(PrefixNext >= Prefixes.Length - 1)
+                Environment.Fail("ERROR: OOM Prefix buffer full"u8);
+
             PrefixNext++;
         }
         return sp;
@@ -142,11 +190,22 @@ public static class MarkovGenerator
         s.Next = p.FirstSuffix;
        
         p.FirstSuffix = SuffixNext;
+
+        if(SuffixNext >= Suffixes.Length - 1)
+            Environment.Fail("ERROR: OOM Suffix buffer full"u8);
+
         SuffixNext++;
     }
+        
     static void Add(Word_Tuple words, Mem suffix)
     {
         var prefix = Lookup(words, true);
+        /*
+        var m0 = Prefixes[prefix].PrefixWords[0]; Console.Write(MemToStr(m0)); Console.Write(" "u8);
+        var m1 = Prefixes[prefix].PrefixWords[1]; Console.Write(MemToStr(m1)); Console.Write(" => "u8);
+        var s = MemToStr(suffix); Console.Write(s); Console.WriteLine(""u8);
+        System.Console.WriteLine(SuffixNext);
+        */
         AddSuffix(prefix, suffix);
     }
     
@@ -165,21 +224,28 @@ public static class MarkovGenerator
     static void Build()
     {
         var idx = 0;
+        Word_Tuple prefix = default;
+
+        // Fill out the prefix buffer with the first words in the text.
+        for(var w = 0; w < NPREF; w++)
+        {
+           var word = GetWord(idx);
+           if(word.Start == word.End)
+               return;
+            prefix[w] = word;
+            idx = word.End;
+        }
+
         while(true) {
-            Word_Tuple prefix = default;
-            for(var w = 0; w < NPREF; w++)
-            {
-               var word = GetWord(idx);
-               if(word.Start == word.End)
-                   return;
-                prefix[w] = word;
-                idx = word.End;
-            }
             var suffix = GetWord(idx);
             if(suffix.Start == suffix.End)
                 return;
             Add(prefix, suffix);
             idx = suffix.End;
+
+            for(var w = 0; w < NPREF - 1; w++)
+                prefix[w] = prefix[w + 1];
+            prefix[NPREF - 1] = suffix;
         }
     }
 }
