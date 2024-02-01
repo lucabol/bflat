@@ -5,6 +5,7 @@
 /*
  * Markov chain random text generator.
  */
+
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -17,31 +18,31 @@
 #include "eprintf.h"
 
 enum {
-	NPREF = 2,	/* number of prefix words */
-	NHASH = 4093,	/* size of state hash table array */
-	MAXGEN = 10000	/* maximum words generated */
+	NPREF	= 2,	/* number of prefix words */
+	NHASH	= 4093,	/* size of state hash table array */
+	MAXGEN	= 10000	/* maximum words generated */
 };
 
 typedef struct State State;
 typedef struct Suffix Suffix;
 
 struct State {	/* prefix + suffix list */
-	char* pref[NPREF];	/* prefix words */
-	Suffix* suf;			/* list of suffixes */
-	State* next;			/* next in hash table */
+	char	*pref[NPREF];	/* prefix words */
+	Suffix	*suf;			/* list of suffixes */
+	State	*next;			/* next in hash table */
 };
 
 struct Suffix {	/* list of suffixes */
-	char* word;			/* suffix */
-	Suffix* next;			/* next in list of suffixes */
+	char	*word;			/* suffix */
+	Suffix	*next;			/* next in list of suffixes */
 };
 
-State* lookup(char* prefix[], int create);
-void	build(char* prefix[], FILE*);
+State	*lookup(char *prefix[], int create);
+void	build(char *prefix[], FILE*);
 void	generate(int nwords);
-void	add(char* prefix[], char* word);
+void	add(char *prefix[], char *word);
 
-State* statetab[NHASH];	/* hash table of states */
+State	*statetab[NHASH];	/* hash table of states */
 
 char NONWORD[] = "\n";  /* cannot appear as real word */
 
@@ -49,7 +50,7 @@ char NONWORD[] = "\n";  /* cannot appear as real word */
 int main(void)
 {
 	int i, nwords = MAXGEN;
-	char* prefix[NPREF];		/* current input prefix */
+	char *prefix[NPREF];		/* current input prefix */
 
 	int c;
 	long seed;
@@ -64,20 +65,20 @@ int main(void)
 	add(prefix, NONWORD);
 	generate(nwords);
 	return 0;
-}
+}   
 
 const int MULTIPLIER = 31;  /* for hash() */
 
 /* hash: compute hash value for array of NPREF strings */
-unsigned int hash(char* s[NPREF])
+unsigned int hash(char *s[NPREF])
 {
 	unsigned int h;
-	unsigned char* p;
+	unsigned char *p;
 	int i;
 
 	h = 0;
 	for (i = 0; i < NPREF; i++)
-		for (p = (unsigned char*)s[i]; *p != '\0'; p++)
+		for (p = (unsigned char *) s[i]; *p != '\0'; p++)
 			h = MULTIPLIER * h + *p;
 	return h % NHASH;
 }
@@ -85,10 +86,10 @@ unsigned int hash(char* s[NPREF])
 /* lookup: search for prefix; create if requested. */
 /*  returns pointer if present or created; NULL if not. */
 /*  creation doesn't strdup so strings mustn't change later. */
-State* lookup(char* prefix[NPREF], int create)
+State* lookup(char *prefix[NPREF], int create)
 {
 	int i, h;
-	State* sp;
+	State *sp;
 
 	h = hash(prefix);
 	for (sp = statetab[h]; sp != NULL; sp = sp->next) {
@@ -99,7 +100,7 @@ State* lookup(char* prefix[NPREF], int create)
 			return sp;
 	}
 	if (create) {
-		sp = (State*)emalloc(sizeof(State));
+		sp = (State *) emalloc(sizeof(State));
 		for (i = 0; i < NPREF; i++)
 			sp->pref[i] = prefix[i];
 		sp->suf = NULL;
@@ -110,35 +111,35 @@ State* lookup(char* prefix[NPREF], int create)
 }
 
 /* addsuffix: add to state. suffix must not change later */
-void addsuffix(State* sp, char* suffix)
+void addsuffix(State *sp, char *suffix)
 {
-	Suffix* suf;
+	Suffix *suf;
 
-	suf = (Suffix*)emalloc(sizeof(Suffix));
+	suf = (Suffix *) emalloc(sizeof(Suffix));
 	suf->word = suffix;
 	suf->next = sp->suf;
 	sp->suf = suf;
 }
 
 /* add: add word to suffix list, update prefix */
-void add(char* prefix[NPREF], char* suffix)
+void add(char *prefix[NPREF], char *suffix)
 {
-	State* sp;
+	State *sp;
 
 	sp = lookup(prefix, 1);  /* create if not found */
 	addsuffix(sp, suffix);
 	/* move the words down the prefix */
-	memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
-	prefix[NPREF - 1] = suffix;
+	memmove(prefix, prefix+1, (NPREF-1)*sizeof(prefix[0]));
+	prefix[NPREF-1] = suffix;
 }
 
 /* build: read input, build prefix table */
-void build(char* prefix[NPREF], FILE* f)
+void build(char *prefix[NPREF], FILE *f)
 {
 	char buf[100], fmt[10];
 
 	/* create a format string; %s could overflow buf */
-	sprintf(fmt, "%%%ds", sizeof(buf) - 1);
+	sprintf(fmt, "%%%ds", sizeof(buf)-1);
 	while (fscanf(f, fmt, buf) != EOF)
 		add(prefix, estrdup(buf));
 }
@@ -146,9 +147,9 @@ void build(char* prefix[NPREF], FILE* f)
 /* generate: produce output, one word per line */
 void generate(int nwords)
 {
-	State* sp;
-	Suffix* suf;
-	char* prefix[NPREF], * w;
+	State *sp;
+	Suffix *suf;
+	char *prefix[NPREF], *w;
 	int i, nmatch;
 
 	for (i = 0; i < NPREF; i++)	/* reset initial prefix */
@@ -167,7 +168,8 @@ void generate(int nwords)
 		if (strcmp(w, NONWORD) == 0)
 			break;
 		printf("%s\n", w);
-		memmove(prefix, prefix + 1, (NPREF - 1) * sizeof(prefix[0]));
-		prefix[NPREF - 1] = w;
+		memmove(prefix, prefix+1, (NPREF-1)*sizeof(prefix[0]));
+		prefix[NPREF-1] = w;
 	}
 }
+
