@@ -3,7 +3,7 @@
 /* by Brian W. Kernighan and Rob Pike */
 
 /*
- * Markov chain random text generator.
+ * Markov chain random text generator. Slightly modified to avoid msft warnings and load from file instead of stdin.
  */
 
 #ifdef _MSC_VER
@@ -47,7 +47,7 @@ State	*statetab[NHASH];	/* hash table of states */
 char NONWORD[] = "\n";  /* cannot appear as real word */
 
 /* markov main: markov-chain random text generation */
-int main(void)
+int main(int argc, char* argv[])
 {
 	int i, nwords = MAXGEN;
 	char *prefix[NPREF];		/* current input prefix */
@@ -55,13 +55,22 @@ int main(void)
 	int c;
 	long seed;
 
-	setprogname("markov");
+	setprogname("TPOP");
+
+	if (argc != 2)
+		eprintf("Usage: %s <filename>\n", argv[0]);
+
 	seed = time(NULL);
 
 	srand(seed);
 	for (i = 0; i < NPREF; i++)	/* set up initial prefix */
 		prefix[i] = NONWORD;
-	build(prefix, stdin);
+
+	FILE* in = fopen(argv[1], "r");
+	if(!in)
+		eprintf("Error opening file %s", argv[1]);
+
+	build(prefix, in);
 	add(prefix, NONWORD);
 	generate(nwords);
 	return 0;

@@ -27,13 +27,10 @@ public static class MarkovGenerator
         public int Next;
     }
 
-    // Alternatively, declare the buffers here with a size defined by a constant
-    // as done above for the Word_Buffer. That avoids keeping the constants in sync
-    // at the expense of ugliness.
     /* KEEP THE CONSTANTS IN SYNC WITH THE BUFFER SIZES BELOW. */
     const int NHASH     = Buffers.K16;
-
     static Buffers.K16_Buffer<int>     Hashes;
+
     static Buffers.HugeBuffer<Prefix>  Prefixes;
     static Buffers.HugeBuffer<Suffix>  Suffixes;
     static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a compiler error ...

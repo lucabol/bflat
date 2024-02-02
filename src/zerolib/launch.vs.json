@@ -19,6 +19,15 @@
         "你好",
         "ArgN"
       ]
+    },
+    {
+      "type": "default",
+      "project": "Main.exe",
+      "projectTarget": "",
+      "name": "Main.exe kjbible.txt",
+      "args": [
+        "kjbible.txt"
+      ]
     }
   ]
 }

@@ -13,14 +13,14 @@ public static partial class Environment
     static Buffers.K8_Buffer<byte> _commandLine;
     static Buffers.K_Buffer<int> _indexes;
 
-    // -1 means not initialized. Rejoice, we saved one byte for the bool, but wasted some Kbs for the _commandLine buffer.
-    static int _argc = -1;
+    static int _argc;
+    static bool _initialized;
 
     public static int Argc
     {
         get
         {
-            if(_argc == -1)
+            if(!_initialized)
                 FillCommandLineCache();
             return _argc;
         }
@@ -28,6 +28,7 @@ public static partial class Environment
 
     static void FillCommandLineCache()
     {
+        _initialized = true;
         var args = Internal.Runtime.CompilerHelpers.StartupCodeHelpers.GetArgs();
         _argc = args.Length;
         var index = 0;
@@ -40,13 +41,14 @@ public static partial class Environment
             var utf8 = Encoder.Utf16ToUtf8(arg, buf);
             _indexes[i] = index;
             index += utf8.Length;
+            _indexes[i+1] = index;
         }
     }
 
     public static Str8 Arg(int index)
     {
 
-        if (_argc == -1)
+        if (!_initialized)
             FillCommandLineCache();
 
         if(index < 0 || index >= _argc)
