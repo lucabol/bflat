@@ -5,16 +5,22 @@ using Sys;
 
 public static class MarkovGenerator
 {
+    // This represents a single word in the Text buffer.
+    // TODO: this wasted bits. The length of a word is less than 255. Also, the bible is 4.5MB.
+    // The whole structure could be packed into 4 bytes, dramatically increasing cache utilization.
     struct Mem
     {
         public int Start;
         public int End;
     }
 
+    // To keep the genericity of the original implementation, we allow different number of prefix words.
+    // Hardcoding the number would allow more optimizations.
     const int NPREF = 2; // number of prefix words
     [System.Runtime.CompilerServices.InlineArray(NPREF)]
     struct Word_Tuple { private Mem _e0; }
 
+    // TODO: As above these two structs could be packed more tightly.
     struct Prefix
     {
         public Word_Tuple  PrefixWords;
@@ -27,15 +33,22 @@ public static class MarkovGenerator
         public int Next;
     }
 
-    /* KEEP THE CONSTANTS IN SYNC WITH THE BUFFER SIZES BELOW. */
+    // The data structure replicate the original one without the allocations.
+    // Aka, an hashtable of prefix words, where each prefix points to a list of suffixes.
+    // It keeps the whole text in memory at all times and uses Span to to point to prefixes and suffixes.
+    // TODO: Using open addressing and packing the above structures would reduce the memory footprint.
+    // TODO: Also, the buffers below are huge. I didn't spend time measuring how big they really need to be.
+
+    /* KEEP THE CONSTANT IN SYNC WITH THE BUFFER SIZE BELOW. */
     const int NHASH     = Buffers.K16;
     static Buffers.K16_Buffer<int>     Hashes;
 
     static Buffers.HugeBuffer<Prefix>  Prefixes;
     static Buffers.HugeBuffer<Suffix>  Suffixes;
-    static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a compiler error ...
+    static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a bflat compiler error ...
     static int TextLength;
 
+    // These point to the next free slots. ++ is like malloc.
     static int PrefixNext;
     static int SuffixNext;
 
@@ -48,8 +61,9 @@ public static class MarkovGenerator
 
         Build();
         Generate(nwords);
-        Sys.Console.Write("Prefixes: "u8); System.Console.WriteLine(PrefixNext);
-        Sys.Console.Write("Suffixes: "u8); System.Console.WriteLine(SuffixNext);
+
+        //Sys.Console.Write("Prefixes: "u8); System.Console.WriteLine(PrefixNext);
+        //Sys.Console.Write("Suffixes: "u8); System.Console.WriteLine(SuffixNext);
         //Debug();
     }
 
