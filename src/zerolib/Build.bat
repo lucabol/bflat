@@ -1,2 +1,2 @@
-bflat build -O0 --stdlib:none -o Main.exe
-clang TPOP.c eprintf.c -o TPOP.exe
+bflat build -Os --stdlib:none -o Main.exe
+clang -Os TPOP.c eprintf.c -o TPOP.exe

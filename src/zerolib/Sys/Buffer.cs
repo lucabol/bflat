@@ -11,8 +11,9 @@ public static partial class Buffers
     public const int K8    = K * 8;
     public const int K16   = K * 16;
 
-    public const int M     = K * K;
-    public const int M8    = M * 8;
+    public const int M      = K * K;
+    public const int M8     = M * 8;
+    public const int M64    = M * 64;
 
     // Inline arrays cannot be bigger than 1Mb (or sometimes a combination of smaller ones don't compile either, ?!).
     [InlineArray(K)]
@@ -28,7 +29,7 @@ public static partial class Buffers
     // This is ergonomically nice, but, used as static var, it goes into the data segment, producing a huge binary.
     public unsafe struct HugeBuffer<T> where T: unmanaged
     {
-        fixed byte _buf[M8];
+        fixed byte _buf[M64];
 
         //public ref T this[int index] => ref Unsafe.As<byte, T>(ref _buf[index * sizeof(T)]);
 
@@ -42,7 +43,7 @@ public static partial class Buffers
         }
         public static implicit operator System.Span<T>(HugeBuffer<T> buffer)
             => MemoryMarshal.CreateSpan(ref Unsafe.As<byte,T>(ref buffer._buf[0]), M8 / sizeof(T)); 
-        public int Length => M8 / sizeof(T);
+        public int Length => M64 / sizeof(T);
     }
 
     // Using HugeBuffer<byte> gives compiler errors, so I need to create a new type.

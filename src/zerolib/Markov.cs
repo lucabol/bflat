@@ -39,16 +39,20 @@ public static class MarkovGenerator
     static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a compiler error ...
     static int TextLength;
 
-    static int PrefixNext = 1; // We use 0 as a sentinel value for empty prefixes.
+    static int PrefixNext;
     static int SuffixNext;
 
     public static void Run(Str8 path, int nwords)
     {
+        // We use 0 as a sentinel value for empty prefixes, but initializing it in the static part of the class brings all statics out of .bss segment.
+        PrefixNext = 1;
         var txt = File.Slurp(path, Text.Span);
         TextLength = txt.Length;
 
         Build();
         Generate(nwords);
+        Sys.Console.Write("Prefixes: "u8); System.Console.WriteLine(PrefixNext);
+        Sys.Console.Write("Suffixes: "u8); System.Console.WriteLine(SuffixNext);
         //Debug();
     }
 
