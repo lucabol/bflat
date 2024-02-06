@@ -4,9 +4,10 @@ static class Program
     {
         #if TEST
         Tests.Run();
-        #endif
+        #else
         //MarkovGenerator.Run("kjbible.txt"u8, 1000);
         var path = Sys.Environment.Arg(0);
-        MarkovGenerator.Run(path, 10_000);
+        MarkovNoAllocGenerator.Run(path, 10_000);
+        #endif
     }
 }

@@ -3,7 +3,7 @@ using Sys;
 // From the Practice of Programming, Kernighan and Pike.
 // https://www.cs.princeton.edu/~bwk/tpop.webpage/markov.c
 
-public static class MarkovGenerator
+public static class MarkovLinearGenerator
 {
     // This represents a single word in the Text buffer.
     // TODO: this wasted bits. The length of a word is less than 255. Also, the bible is 4.5MB.

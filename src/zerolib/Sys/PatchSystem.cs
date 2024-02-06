@@ -41,6 +41,7 @@ namespace System.Runtime.CompilerServices
         public ExtensionAttribute() { }
     }
 
+    // I admit I don't remember exactly why this is needed, but it doesn't hurt to have it.
     internal static partial class ClassConstructorRunner
     {
         private static unsafe object CheckStaticClassConstructionReturnGCStaticBase(ref StaticClassConstructionContext context, object gcStaticBase)
@@ -48,6 +49,13 @@ namespace System.Runtime.CompilerServices
             CheckStaticClassConstruction(ref context);
             return gcStaticBase;
         }
+    }
+
+    public static unsafe partial class Unsafe
+    {
+        // This is just too useful not to have, it is the dual of the AsPointer one.
+        [Intrinsic]
+        public static extern ref T AsRef<T>(void* source);
     }
 }
 

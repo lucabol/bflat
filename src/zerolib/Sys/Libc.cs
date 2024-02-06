@@ -38,6 +38,16 @@ unsafe public static class Libc
     [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
     private static extern unsafe int fwrite(byte* ptr, int size, int count, IntPtr stream);
 
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern void* malloc(int size);
+
+    [DllImport(libc, CallingConvention = CallingConvention.Cdecl), SuppressGCTransition]
+    private static extern void* memset(void* ptr, int value, int num);
+
+    public static void* Memset(void* ptr, int value, int num) => memset(ptr, value, num);
+
+    public static void* Malloc(int size) => malloc(size);
+
     public unsafe static int Put(Str8 s)
     {
         // The span might not be zero terminated, so we need to pass the length.
