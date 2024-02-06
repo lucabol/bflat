@@ -4,15 +4,15 @@
   "configurations": [
     {
       "type": "default",
-      "project": "Main.exe",
+      "project": "Test.exe",
       "projectTarget": "",
-      "name": "Main.exe"
+      "name": "Test.exe"
     },
     {
       "type": "default",
-      "project": "Main.exe",
+      "project": "Test.exe",
       "projectTarget": "",
-      "name": "Main.exe Arg",
+      "name": "Test.exe Arg",
       "args": [
         "Arg1",
         "«ταБЬℓσ»",

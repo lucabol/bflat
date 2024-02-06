@@ -2,17 +2,31 @@
   "version": "0.2.1",
   "tasks": [
     {
-      "taskName": "Build Dbg",
       "appliesTo": "*",
-      "type": "launch",
-      "contextType": "build",
-      "command": "bflat",
       "args": [
         "build",
         "-O0",
         "--stdlib:none",
         "-o Main.exe"
-      ]
+      ],
+      "command": "bflat",
+      "contextType": "custom",
+      "taskName": "Build Main",
+      "type": "launch"
+    },
+    {
+      "appliesTo": "*",
+      "args": [
+        "build",
+        "-O0",
+        "--stdlib:none",
+        "-dTEST",
+        "-o Test.exe"
+      ],
+      "command": "bflat",
+      "contextType": "custom",
+      "taskName": "Build Test",
+      "type": "launch"
     }
   ]
 }

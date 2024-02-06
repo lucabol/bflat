@@ -3,16 +3,30 @@ namespace Sys;
 using System;
 using System.Runtime.CompilerServices;
 
+// Simpler version of https://github.com/lucabol/LNativeMemory/blob/master/LNativeMemory/Arena.cs
+// This is an arena allocator that can allocate memory for unmanaged types and spans.
+// It is simpler in that it hardens in the zeroing of memory and the lack of bound checking in release.
+// In the linked version, that is achieved through a policy system
+// as in https://www.lucabol.com/posts/2019-01-29-meta-programming-and-policy-based-design/#implementation
+// which doesn't work in bflat as it doesn't support `typeof`. I could investigate.
 public unsafe ref struct Arena
 {
     private void* _start;
     private void* _nextAlloc;
     private int _size;
 
+    public Arena(int size)
+    {
+        _start = _nextAlloc = Libc.Malloc(size);
+        _size = size;
+        Libc.Memset(_start, 0, _size);
+    }
+
     public Arena(Span<byte> memory)
     {
         _start = _nextAlloc = Unsafe.AsPointer<byte>(ref memory[0]);
         _size = memory.Length;
+        Libc.Memset(_start, 0, _size);
     }
 
     public ref T Alloc<T>(int sizeOfType = 0, int alignment = 16) where T : unmanaged
@@ -26,7 +40,8 @@ public unsafe ref struct Arena
         _nextAlloc = Align(_nextAlloc, alignment);
 
         Debug.Assert((ulong)_nextAlloc % (ulong) alignment == 0);
-        Debug.Assert((byte*)_nextAlloc + sizeOfType <= Unsafe.Add<byte>(Unsafe.AsRef<byte>(_start), (int)_size),
+        // It would be simpler with pointer arithmetic, but perhaps there are advantages in doing it this convoluted way.
+        Debug.Assert((byte*)_nextAlloc + sizeOfType <= Unsafe.AsPointer(ref Unsafe.Add<byte>(ref Unsafe.AsRef<byte>(_start), (int)_size)),
                 "Trying to allocate too many bytes");
 
         var ptr = _nextAlloc;
@@ -48,7 +63,7 @@ public unsafe ref struct Arena
         _nextAlloc = Align(_nextAlloc, alignment);
 
         Debug.Assert((ulong)_nextAlloc % (ulong)alignment == 0);
-        Debug.Assert((byte*)_nextAlloc + sizeOfArray <= Unsafe.Add<byte>(ref Unsafe.AsRef<byte>(_start), (int)_size),
+        Debug.Assert((byte*)_nextAlloc + sizeOfArray <= Unsafe.AsPointer(ref Unsafe.Add<byte>(ref Unsafe.AsRef<byte>(_start), (int)_size)),
                 "Trying to allocate too many bytes");
 
         var ptr = _nextAlloc;
@@ -60,6 +75,7 @@ public unsafe ref struct Arena
     public void Reset()
     {
         _nextAlloc = _start;
+        Libc.Memset(_start, 0, _size);
     }
 
     public long BytesLeft => _size - (long)((byte*)_nextAlloc - (byte*)_start);
