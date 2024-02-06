@@ -26,7 +26,6 @@ public static partial class Buffers
     public struct K16_Buffer<T> { private T _element0; }
 
 
-    // This is ergonomically nice, but, used as static var, it goes into the data segment, producing a huge binary.
     public unsafe struct HugeBuffer<T> where T: unmanaged
     {
         fixed byte _buf[M64];

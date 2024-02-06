@@ -40,6 +40,15 @@ namespace System.Runtime.CompilerServices
     {
         public ExtensionAttribute() { }
     }
+
+    internal static partial class ClassConstructorRunner
+    {
+        private static unsafe object CheckStaticClassConstructionReturnGCStaticBase(ref StaticClassConstructionContext context, object gcStaticBase)
+        {
+            CheckStaticClassConstruction(ref context);
+            return gcStaticBase;
+        }
+    }
 }
 
 namespace System.Runtime.InteropServices

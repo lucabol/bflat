@@ -5,6 +5,6 @@ static class Program
         //Tests.Run();
         //MarkovGenerator.Run("kjbible.txt"u8, 1000);
         var path = Sys.Environment.Arg(0);
-        MarkovGenerator.Run(path, 1000);
+        MarkovGenerator.Run(path, 10000);
     }
 }
