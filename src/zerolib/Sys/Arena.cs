@@ -81,5 +81,8 @@ public unsafe ref struct Arena
     public long BytesLeft => _size - (long)((byte*)_nextAlloc - (byte*)_start);
     public long TotalBytes => _size;
 
+    public nint  ToPtr<T>(ref T t) => (nint)Unsafe.AsPointer(ref t);
+    public ref T ToRef<T>(nint ptr) => ref Unsafe.AsRef<T>((void*)ptr);
+
     private static void* Align(void* mem, int alignment) => (void*)(((ulong)mem + (ulong)alignment - 1) & ~((ulong)alignment - 1));
 }

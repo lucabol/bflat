@@ -87,6 +87,12 @@ static class Tests
         var spank = ar.AllocSpan<CStruct>(20);
         Assert.Equal(0, spank[0].X);
 
+        Yes("ARENA"u8, "CAN USE POINTERS TO STRUCTS IN ARENAS."u8);
+        ref var ss = ref ar.Alloc<CStruct>();
+        ss.X = 3;
+        var sp = ar.ToPtr(ref ss);
+        ref var sss = ref ar.ToRef<CStruct>(sp);
+        Assert.Equal(sss.X, ss.X);
     }
 
     static void TestFile()
