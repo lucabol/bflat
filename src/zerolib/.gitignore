@@ -1,7 +1,6 @@
 *.exe
 *.pdb
 
-# Ignore all files without extension (linux exec?)
-*
-!*.*
-!*/
+Main
+Test
+TPOP
