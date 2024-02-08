@@ -10,6 +10,9 @@ public static partial class SpanUtils
     public static System.Span<T> Slice<T>(this System.Span<T> span, int start, int length)
         => System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref span[start], length);
 
+    public unsafe static System.ReadOnlySpan<T> Slice<T>(this System.ReadOnlySpan<T> span, int start, int length)
+    { fixed(void* p = &(span[start])) return new System.ReadOnlySpan<T>(p, length); }
+
     // ZERO: add '==' to Span or make Span/ROSpan partial classes.
     public static bool Equals(this Str8 span, Str8 other)
     {

@@ -83,6 +83,8 @@ public unsafe ref struct Arena
 
     public nint  ToPtr<T>(ref T t) => (nint)Unsafe.AsPointer(ref t);
     public ref T ToRef<T>(nint ptr) => ref Unsafe.AsRef<T>((void*)ptr);
+    public Span<T> ToSpan<T>(nint ptr, int length) => new Span<T>((void*)ptr, length);
+    public (nint, int) ToPtrAndLength<T>(Span<T> span) => ((nint)Unsafe.AsPointer(ref span[0]), span.Length);
 
     private static void* Align(void* mem, int alignment) => (void*)(((ulong)mem + (ulong)alignment - 1) & ~((ulong)alignment - 1));
 }

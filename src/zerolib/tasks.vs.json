@@ -7,11 +7,26 @@
         "build",
         "-O0",
         "--stdlib:none",
+        "-dNOALLOC",
         "-o Main.exe"
       ],
       "command": "bflat",
       "contextType": "custom",
-      "taskName": "Build Main",
+      "taskName": "Build NOALLOC",
+      "type": "launch"
+    },
+    {
+      "appliesTo": "*",
+      "args": [
+        "build",
+        "-O0",
+        "--stdlib:none",
+        "-dARENA",
+        "-o Main.exe"
+      ],
+      "command": "bflat",
+      "contextType": "custom",
+      "taskName": "Build ARENA",
       "type": "launch"
     },
     {

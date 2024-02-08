@@ -3,7 +3,7 @@ using Sys;
 // From the Practice of Programming, Kernighan and Pike.
 // https://www.cs.princeton.edu/~bwk/tpop.webpage/markov.c
 
-public static class MarkovNoAllocGenerator
+public static class MarkovArenaGenerator
 {
     // This represents a single word in the Text buffer.
     // TODO: this wasted bits. The length of a word is less than 255. Also, the bible is 4.5MB.
@@ -24,54 +24,55 @@ public static class MarkovNoAllocGenerator
     struct Prefix
     {
         public Word_Tuple  PrefixWords;
-        public int Next;
-        public int FirstSuffix;
+        public nint Next;
+        public nint FirstSuffix;
     }
     struct Suffix
     {
         public Mem SuffixText;
-        public int Next;
+        public nint Next;
     }
 
-    // The data structure replicate the original one without the allocations.
-    // Aka, an hashtable of prefix words, where each prefix points to a list of suffixes.
-    // It keeps the whole text in memory at all times and uses Span to to point to prefixes and suffixes.
-    // TODO: Using open addressing and packing the above structures would reduce the memory footprint.
-    // TODO: Also, the buffers below are huge. I didn't spend time measuring how big they really need to be.
+    const int MAXMEM  = 1024 * 1024 * 128;
+    const int MAXTEXT = 1024 * 1024 * 5;
+    const int NHASH   = 4093;
 
-    /* KEEP THE CONSTANT IN SYNC WITH THE BUFFER SIZE BELOW. */
-    const int NHASH     = Buffers.K16;
-    static Buffers.K16_Buffer<int>     Hashes;
-
-    static Buffers.HugeBuffer<Prefix>  Prefixes;
-    static Buffers.HugeBuffer<Suffix>  Suffixes;
-    static Buffers.M8_Buffer           Text; // Making this one a HugeBuffer of byte causes a bflat compiler error ...
-    static int TextLength;
-
-    // These point to the next free slots. ++ is like malloc.
-    static int PrefixNext;
-    static int SuffixNext;
-
+    // Pointer to the hashtable of prefixes.
+    static nint hash;
+   
     public static void Run(Str8 path, int nwords)
     {
-        // We use 0 as a sentinel value for empty prefixes, but initializing it in the static part of the class brings all statics out of .bss segment.
-        PrefixNext = 1;
-        var txt = File.Slurp(path, Text.Span);
-        TextLength = txt.Length;
+        Arena ar = new(MAXMEM);
 
-        Build();
-        Generate(nwords);
+        System.Span<byte> text = ar.AllocSpan<byte>(MAXTEXT);
+        var s = File.Slurp(path, text);
+
+        var h = ar.AllocSpan<nint>(NHASH);
+        (hash, _) = ar.ToPtrAndLength(h);
+
+        Build(ar, s);
+        Generate(ar, s, nwords);
     }
 
-    static void Generate(int nwords)
+    static void Generate(Arena ar, Str8 text, int nwords)
     {
         var seed    = (uint)System.Environment.TickCount64;
         Random rnd  = new (seed);
-        var prefix  = (int)rnd.Next() % PrefixNext;
+        var prefix  = (int)rnd.Next() % NHASH;
+
+        // Find the first non-empty prefix after the random one.
+        var hashTbl = ar.ToSpan<nint>(hash, NHASH);
+        while(hashTbl[prefix] == 0 && prefix < NHASH)
+            prefix++;
+
+        if(prefix == NHASH)
+            Environment.Fail("No non-empty prefix"u8);
+
+        ref var pre = ref ar.ToRef<Prefix>(hashTbl[prefix]);
 
         for(var i = 0; i < nwords; i++)
         {
-            var sidx = Prefixes[prefix].FirstSuffix;
+            var sidx = pre.FirstSuffix;
             if(sidx == 0)
                 Environment.Fail("Prefix without suffix"u8);
 
@@ -80,50 +81,49 @@ public static class MarkovNoAllocGenerator
             while(sidx != 0)
             {
                 ns++;
-                sidx = Suffixes[sidx].Next;
+                sidx = ar.ToRef<Suffix>(sidx).Next;
             }
 
             // Pick a random one
             var idx = rnd.Next() % ns;
-            sidx = Prefixes[prefix].FirstSuffix;
+            sidx = pre.FirstSuffix;
             while(idx > 0)
             {
-                sidx = Suffixes[sidx].Next;
+                sidx = ar.ToRef<Suffix>(sidx).Next;
                 idx--;
             }
 
             // Print the suffix
-            var suffix = Suffixes[sidx].SuffixText;
-            var word = MemToStr(suffix);
+            var suffix = ar.ToRef<Suffix>(sidx).SuffixText;
+            var word = MemToStr(text, suffix);
             Console.Write(word);
             Console.Write(" "u8);
 
             // Rotate the prefix words to the left and add the suffix to the end.
             Word_Tuple newPrefix = default;
-            newPrefix[0] = Prefixes[prefix].PrefixWords[1];
+            newPrefix[0] = pre.PrefixWords[1];
             newPrefix[1] = suffix;
-            prefix = Lookup(newPrefix, false);
-            if(prefix == 0)
+
+            pre = Lookup(ar, text, newPrefix, false);
+            if(IsPrefixEmpty(ref pre))
                 Environment.Fail("No prefix with these two words"u8);
         }
         Console.WriteLine(""u8);
     }
-    
-    // Prints the data structure and number of items
-    // Rehidrate Mem as a proper Str8
-    static Str8 MemToStr(Mem mem)
-    {
-        var buf = Text.Span.Slice(mem.Start, mem.End - mem.Start);
-        return buf.AsReadOnlySpan();
-    }
 
+    // Rehidrate Mem as a proper Str8
+    static Str8 MemToStr(Str8 text, Mem mem)
+    {
+        var buf = text.Slice(mem.Start, mem.End - mem.Start);
+        return buf;
+    }
     // Same hash function as the original implementation.
-    static int Hash(Word_Tuple words)
+    static int Hash(Str8 text, Word_Tuple words)
     {
         const int MULTIPLIER = 31;
         var h = 0u;
         for(var w = 0; w < NPREF; w++) {
-            var str = MemToStr(words[w]);
+            var str = MemToStr(text, words[w]);
             for (var i = 0; i < str.Length; i++)
                 h = h * MULTIPLIER + str[i];
         }
@@ -133,91 +133,99 @@ public static class MarkovNoAllocGenerator
     static bool IsPrefixEmpty(ref Prefix p) =>
         p.PrefixWords[0].Start == 0 && p.PrefixWords[0].End == 0;
 
-    // This follows the original implementation, but uses the next slot in the prefix buffer instead of malloc.
-    static int Lookup(Word_Tuple words, bool create)
+    static void PrintPrefix(ref Prefix p, Str8 text)
     {
-        var h1 = Hash(words);
-        var h  = Hashes[h1];
+        for(var i = 0; i < NPREF; i++)
+        {
+            var word = MemToStr(text, p.PrefixWords[i]);
+            Console.Write(word);
+            Console.Write(" "u8);
+        }
+        Console.WriteLine(""u8);
+    }
+
+    // This follows the original implementation, but uses the next slot in the prefix buffer instead of malloc.
+    static ref Prefix Lookup(Arena ar, Str8 text, Word_Tuple words, bool create)
+    {
+        var hashTbl = ar.ToSpan<nint>(hash, NHASH);
+
+        var h1 = Hash(text, words);
+
+        var h  = hashTbl[h1];
         var sp = h;
 
         while(sp != 0)
         {
-            ref var p = ref Prefixes[sp];
+            ref var p = ref ar.ToRef<Prefix>(sp);
             int i;
+
             for (i = 0; i < NPREF; i++)
             {
-                var w = MemToStr(words[i]);
-                if (!w.Equals(MemToStr(p.PrefixWords[i])))
+                var w = MemToStr(text, words[i]);
+                if (!w.Equals(MemToStr(text, p.PrefixWords[i])))
                     break;
             }
 
             if(i == NPREF)
-                return sp;
+                return ref p;
             sp = p.Next;
         }
 
         if(create)
         {
-            // Allocate a new prefix (i.e., malloc)
-            sp = PrefixNext;
-            ref var p = ref Prefixes[sp];
+            ref var nsp = ref ar.Alloc<Prefix>();
 
-            p.PrefixWords = words;
-            p.Next = h;
-            Hashes[h1] = sp;
+            nsp.PrefixWords = words;
+            nsp.FirstSuffix = 0;
 
-            if(PrefixNext >= Prefixes.Length - 1)
-                Environment.Fail("ERROR: OOM Prefix buffer full"u8);
-
-            PrefixNext++;
+            nsp.Next = hashTbl[h1];
+            hashTbl[h1] = ar.ToPtr(ref nsp);
+            return ref nsp;
         }
-        return sp;
+        Environment.Fail("No prefix with these two words"u8);
+
+        // This code will never execute
+        return ref ar.Alloc<Prefix>();;
     }
 
-    static void AddSuffix(int prefix, Mem suffix)
+    static void AddSuffix(Arena ar, ref Prefix p, Mem suffix)
     {
-        ref var s = ref Suffixes[SuffixNext];
+        ref var s = ref ar.Alloc<Suffix>();
         s.SuffixText = suffix;
-
-        ref var p = ref Prefixes[prefix];
-        s.Next = p.FirstSuffix;
+        s.Next = ar.ToPtr(ref p.FirstSuffix);
        
-        p.FirstSuffix = SuffixNext;
-
-        if(SuffixNext >= Suffixes.Length - 1)
-            Environment.Fail("ERROR: OOM Suffix buffer full"u8);
-
-        SuffixNext++;
+        p.FirstSuffix = ar.ToPtr(ref s);
     }
 
-    static void Add(Word_Tuple words, Mem suffix)
+    static void Add(Arena ar, Str8 text, Word_Tuple words, Mem suffix)
     {
-        var prefix = Lookup(words, true);
-        AddSuffix(prefix, suffix);
+        ref var prefix = ref Lookup(ar, text, words, true);
+        AddSuffix(ar, ref prefix, suffix);
     }
     
     // TODO: perhaps a better text could be generated by using a more sophisticated tokenizer.
-    static Mem GetWord(int start)
+    static Mem GetWord(Str8 text, int start)
     {
         // Skip initial spaces
-        while(start < TextLength && Text.Span[start] == ' ')
+        while(start < text.Length && text[start] == ' ')
             start++;
 
         var end = start;
-        while(end < TextLength && Text.Span[end] != ' ')
+        while(end < text.Length && text[end] != ' ')
             end++;
         return new Mem { Start = start, End = end };
     }
 
-    static void Build()
+    static void Build(Arena ar, Str8 text)
     {
         var idx = 0;
         Word_Tuple prefix = default;
 
+
         // Fill out the prefix buffer with the first words in the text.
         for(var w = 0; w < NPREF; w++)
         {
-           var word = GetWord(idx);
+           var word = GetWord(text, idx);
            if(word.Start == word.End)
                return;
             prefix[w] = word;
@@ -226,10 +234,11 @@ public static class MarkovNoAllocGenerator
 
         // And just keep 1. Getting a new suffix 2. Adding (prefix, suffix) to the data structure 3. Rotating the prefix buffer.
         while(true) {
-            var suffix = GetWord(idx);
+            var suffix = GetWord(text, idx);
             if(suffix.Start == suffix.End)
                 return;
-            Add(prefix, suffix);
+
+            Add(ar, text, prefix, suffix);
             idx = suffix.End;
 
             for(var w = 0; w < NPREF - 1; w++)
