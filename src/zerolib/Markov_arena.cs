@@ -154,9 +154,11 @@ public static class MarkovArenaGenerator
         var h  = hashTbl[h1];
         var sp = h;
 
+        ref var p = ref ar.ToRef<Prefix>(sp);
+
         while(sp != 0)
         {
-            ref var p = ref ar.ToRef<Prefix>(sp);
+            p = ref ar.ToRef<Prefix>(sp);
             //PrintPrefix(ref p, text);
             int i;
 
@@ -174,20 +176,16 @@ public static class MarkovArenaGenerator
 
         if(create)
         {
-            ref var nsp = ref ar.Alloc<Prefix>();
+            p = ref ar.Alloc<Prefix>();
 
-            nsp.PrefixWords = words;
-            nsp.FirstSuffix = 0;
+            p.PrefixWords = words;
+            p.FirstSuffix = 0;
 
             //PrintPrefix(ref nsp, text);
-            nsp.Next = hashTbl[h1];
-            hashTbl[h1] = ar.ToPtr(ref nsp);
-            return ref nsp;
+            p.Next = hashTbl[h1];
+            hashTbl[h1] = ar.ToPtr(ref p);
         }
-        Environment.Fail("No prefix with these two words"u8);
-
-        // This code will never execute
-        return ref ar.Alloc<Prefix>();;
+        return ref p;
     }
 
     static void AddSuffix(ref Arena ar, ref Prefix p, Mem suffix)
