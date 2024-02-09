@@ -176,7 +176,7 @@ void generate(int nwords)
 			eprintf("internal error: no suffix %d %s", i, prefix[0]);
 		if (strcmp(w, NONWORD) == 0)
 			break;
-		printf("%s\n", w);
+		printf("%s ", w);
 		memmove(prefix, prefix+1, (NPREF-1)*sizeof(prefix[0]));
 		prefix[NPREF-1] = w;
 	}

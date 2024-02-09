@@ -1,1 +1,1 @@
-hyperfine --warmup 5 "TPOP.exe kjbible.txt" "Main.exe kjbible.txt"
+hyperfine --warmup 5 "TPOP.exe kjbible.txt" "NoAlloc.exe kjbible.txt" "Arena.exe kjbible.txt"
