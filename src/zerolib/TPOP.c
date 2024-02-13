@@ -19,7 +19,7 @@
 
 enum {
 	NPREF	= 2,	/* number of prefix words */
-	NHASH	= 4093,	/* size of state hash table array */
+	NHASH	= 300000,	/* size of state hash table array */
 	MAXGEN	= 10000 /* maximum words generated */
 };
 

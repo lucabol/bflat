@@ -30,6 +30,7 @@ public static class MarkovStandardGenerator
     static Dictionary<string[], List<string>> Build(string[] words)
     {
         var hash = new Dictionary<string[], List<string>>(new StringArrayEqualityComparer());
+        hash.EnsureCapacity(300_000);
 
         for (int i = 0; i < words.Length - NWORDS; i++)
         {

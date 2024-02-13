@@ -35,7 +35,8 @@ public static class MarkovArenaGenerator
 
     const int MAXMEM  = 1024 * 1024 * 128;
     const int MAXTEXT = 1024 * 1024 * 5;
-    const int NHASH   = 4093;
+    // This is the same number as the size for the Hashtable in the .NET version
+    const int NHASH   = 300_000;
 
     // Pointer to the hashtable of prefixes.
     static nint hash;
