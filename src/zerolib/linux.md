@@ -1,5 +1,6 @@
 | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
-| `./NoAlloc kjbible.txt` | 220.8 ± 8.9 | 208.0 | 238.6 | 1.54 ± 0.12 |
-| `./Standard kjbible.txt` | 348.1 ± 10.6 | 333.8 | 363.4 | 2.43 ± 0.19 |
-| `./Arena kjbible.txt` | 143.4 ± 10.1 | 109.6 | 156.3 | 1.00 |
+| `./NoAlloc kjbible.txt` | 112.7 ± 16.7 | 63.7 | 141.2 | 1.00 |
+| `./Arena kjbible.txt` | 140.7 ± 16.8 | 91.4 | 157.6 | 1.25 ± 0.24 |
+| `./Standard kjbible.txt` | 359.4 ± 9.3 | 347.2 | 373.7 | 3.19 ± 0.48 |
+| `./TPOP kjbible.txt` | 341.9 ± 17.1 | 323.9 | 377.2 | 3.03 ± 0.47 |
