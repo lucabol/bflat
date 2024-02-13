@@ -35,7 +35,7 @@ public static class MarkovArenaGenerator
 
     const int MAXMEM  = 1024 * 1024 * 128;
     const int MAXTEXT = 1024 * 1024 * 5;
-    // This is the same number as the size for the Hashtable in the .NET version
+    // This is the same number as the size the hashtable ends up being for the kjbible in the standard implementation.
     const int NHASH   = 300_000;
 
     // Pointer to the hashtable of prefixes.

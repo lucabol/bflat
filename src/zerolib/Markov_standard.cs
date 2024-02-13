@@ -30,6 +30,9 @@ public static class MarkovStandardGenerator
     static Dictionary<string[], List<string>> Build(string[] words)
     {
         var hash = new Dictionary<string[], List<string>>(new StringArrayEqualityComparer());
+
+        // This is the empiric size of the hash table that ends up being used for the kjbible.
+        // Preallocating it so that it doesn't have to resize, as the other implementations don't.
         hash.EnsureCapacity(300_000);
 
         for (int i = 0; i < words.Length - NWORDS; i++)

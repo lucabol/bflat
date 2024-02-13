@@ -40,8 +40,8 @@ public static class MarkovNoAllocGenerator
     // TODO: Also, the buffers below are huge. I didn't spend time measuring how big they really need to be.
 
     /* KEEP THE CONSTANT IN SYNC WITH THE BUFFER SIZE BELOW. */
-    const int NHASH     = Buffers.K16;
-    static Buffers.K16_Buffer<int>     Hashes;
+    const int NHASH     = Buffers.BIGSIZE;
+    static Buffers.BigIntBuffer      Hashes;
 
     static Buffers.HugeBuffer<Prefix>  Prefixes;
     static Buffers.HugeBuffer<Suffix>  Suffixes;
@@ -133,6 +133,17 @@ public static class MarkovNoAllocGenerator
     static bool IsPrefixEmpty(ref Prefix p) =>
         p.PrefixWords[0].Start == 0 && p.PrefixWords[0].End == 0;
 
+    static void PrintPrefix(ref Prefix p)
+    {
+        for(var i = 0; i < NPREF; i++)
+        {
+            var word = MemToStr(p.PrefixWords[i]);
+            Console.Write(word);
+            Console.Write(" "u8);
+        }
+        System.Console.WriteLine("");
+    }
+
     // This follows the original implementation, but uses the next slot in the prefix buffer instead of malloc.
     static int Lookup(Word_Tuple words, bool create)
     {
@@ -169,6 +180,7 @@ public static class MarkovNoAllocGenerator
             if(PrefixNext >= Prefixes.Length - 1)
                 Environment.Fail("ERROR: OOM Prefix buffer full"u8);
 
+            //PrintPrefix(ref p);
             PrefixNext++;
         }
         return sp;

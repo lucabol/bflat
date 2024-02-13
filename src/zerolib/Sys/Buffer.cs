@@ -10,6 +10,7 @@ public static partial class Buffers
     public const int K     = 1024;
     public const int K8    = K * 8;
     public const int K16   = K * 16;
+    public const int K300  = K * 300;
 
     public const int M      = K * K;
     public const int M8     = M * 8;
@@ -24,7 +25,6 @@ public static partial class Buffers
 
     [InlineArray(K16)]
     public struct K16_Buffer<T> { private T _element0; }
-
 
     public unsafe struct HugeBuffer<T> where T: unmanaged
     {
@@ -41,8 +41,29 @@ public static partial class Buffers
             }
         }
         public static implicit operator System.Span<T>(HugeBuffer<T> buffer)
-            => MemoryMarshal.CreateSpan(ref Unsafe.As<byte,T>(ref buffer._buf[0]), M8 / sizeof(T)); 
+            => MemoryMarshal.CreateSpan(ref Unsafe.As<byte,T>(ref buffer._buf[0]), M64 / sizeof(T)); 
         public int Length => M64 / sizeof(T);
+    }
+
+
+    public const int BIGSIZE = 300_000;
+
+    public unsafe struct BigIntBuffer
+    {
+        fixed byte _buf[BIGSIZE * sizeof(int)];
+
+        public ref int this[int index]
+        {
+            get {
+                if(index < 0 || index >= BIGSIZE)
+                    Sys.Environment.Fail("Index out of range"u8);
+                return ref Unsafe.Add(ref Unsafe.As<byte, int>(ref _buf[0]), index);
+            }
+        }
+        public static implicit operator System.Span<int>(BigIntBuffer buffer)
+            => MemoryMarshal.CreateSpan(ref Unsafe.As<byte,int>(ref buffer._buf[0]), BIGSIZE); 
+
+        public int Length => BIGSIZE;
     }
 
     // Using HugeBuffer<byte> gives compiler errors, so I need to create a new type.
