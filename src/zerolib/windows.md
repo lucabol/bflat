@@ -1,6 +1,6 @@
 | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
-| `NoAlloc.exe kjbible.txt` | 201.8 ± 13.1 | 188.1 | 225.6 | 1.00 |
-| `Arena.exe kjbible.txt` | 213.3 ± 19.9 | 189.1 | 259.6 | 1.06 ± 0.12 |
-| `Standard.exe kjbible.txt` | 604.5 ± 15.4 | 580.8 | 630.7 | 3.00 ± 0.21 |
-| `TPOP.exe kjbible.txt` | 441.7 ± 10.2 | 430.1 | 462.4 | 2.19 ± 0.15 |
+| `NoAlloc.exe kjbible.txt` | 204.3 ± 29.0 | 150.8 | 271.8 | 1.00 |
+| `Arena.exe kjbible.txt` | 233.2 ± 26.0 | 197.6 | 274.8 | 1.14 ± 0.21 |
+| `Standard.exe kjbible.txt` | 885.2 ± 735.2 | 604.0 | 2974.1 | 4.33 ± 3.65 |
+| `TPOP.exe kjbible.txt` | 457.8 ± 21.1 | 430.7 | 500.4 | 2.24 ± 0.33 |

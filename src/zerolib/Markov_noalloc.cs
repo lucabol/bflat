@@ -104,7 +104,7 @@ public static class MarkovNoAllocGenerator
             newPrefix[1] = suffix;
             prefix = Lookup(newPrefix, false);
             if(prefix == 0)
-                Environment.Fail("No prefix with these two words"u8);
+                prefix  = (int)rnd.Next() % PrefixNext;
         }
         Console.WriteLine(""u8);
     }

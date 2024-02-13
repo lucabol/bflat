@@ -58,8 +58,14 @@ public static class MarkovStandardGenerator
         for (int i = 0; i < nwords; i++)
         {
             Console.Write($"{words[0]} ");
-            var next = hash[words];
-            words = words.Skip(1).Append(next[rand.Next(next.Count)]).ToArray();
+            // My intuition is that the key is not in the has just for
+            // the last word, hence it is inefficient, but simpler to check every time.
+            if(hash.TryGetValue(words, out var next))
+            {
+                words = words.Skip(1).Append(next[rand.Next(next.Count)]).ToArray();
+            } else {
+                hash.Keys.ElementAt(rand.Next(hash.Count));
+            }
         }
     }
 }
