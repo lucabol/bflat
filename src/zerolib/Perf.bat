@@ -1,2 +1,2 @@
-hyperfine --warmup 5 --export-markdown windows.md "TPOP.exe kjbible.txt" "NoAlloc.exe kjbible.txt" "Arena.exe kjbible.txt" "Standard.exe kjbible.txt"
+hyperfine --export-markdown windows.md --warmup 5 "NoAlloc.exe kjbible.txt"  "Standard.exe kjbible.txt" "Arena.exe kjbible.txt" "TPOP.exe kjbible.txt"
 dir *.exe
