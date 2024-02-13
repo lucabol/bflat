@@ -34,6 +34,22 @@
       "args": [
         "build",
         "-O0",
+        "-dSTANDARD",
+        "-o Main.exe",
+        "--stdlib:DotNet",
+        "Main.cs",
+        "Markov_standard.cs"
+      ],
+      "command": "bflat",
+      "contextType": "custom",
+      "taskName": "Build STANDARD",
+      "type": "launch"
+    },
+    {
+      "appliesTo": "*",
+      "args": [
+        "build",
+        "-O0",
         "--stdlib:none",
         "-dTEST",
         "-o Test.exe"

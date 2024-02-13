@@ -10,6 +10,9 @@ static class Program
         #elif ARENA
         var path = Sys.Environment.Arg(0);
         MarkovArenaGenerator.Run(path, 10_000);
+        #elif STANDARD
+        var path = args[0];
+        MarkovStandardGenerator.Run(path, 10_000);
         #else
         #error "No configuration specified"
         #endif
