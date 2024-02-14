@@ -2,25 +2,21 @@ using Sys;
 
 // From the Practice of Programming, Kernighan and Pike.
 // https://www.cs.princeton.edu/~bwk/tpop.webpage/markov.c
+// See Markov_noalloc.cs for more detailed comments on the algorithms.
+// Here I just comment on memory management.
 
 public static class MarkovArenaGenerator
 {
-    // This represents a single word in the Text buffer.
-    // TODO: this wasted bits. The length of a word is less than 255. Also, the bible is 4.5MB.
-    // The whole structure could be packed into 4 bytes, dramatically increasing cache utilization.
     struct Mem
     {
         public int Start;
         public int End;
     }
 
-    // To keep the genericity of the original implementation, we allow different number of prefix words.
-    // Hardcoding the number would allow more optimizations.
-    const int NPREF = 2; // number of prefix words
+    const int NPREF = 2;
     [System.Runtime.CompilerServices.InlineArray(NPREF)]
     struct Word_Tuple { private Mem _e0; }
 
-    // TODO: As above these two structs could be packed more tightly.
     struct Prefix
     {
         public Word_Tuple  PrefixWords;
@@ -33,11 +29,16 @@ public static class MarkovArenaGenerator
         public nint Next;
     }
 
+    // Maximum size of the memory arena and of the text file to load in memory.
     const int MAXMEM  = 1024 * 1024 * 128;
     const int MAXTEXT = 1024 * 1024 * 5;
-    // This is the same number as the size the hashtable ends up being for the kjbible in the standard implementation.
+
+    // This is the same size that the hashtable ends up being for the kjbible.txt file in the standard implementation.
+    // Aka, .NET's Dictionary<T> resizes itself to this number at that file size.
+    // Think of it as manual `calibration` of the implementation for the specific max size.
     const int NHASH   = 300_000;
 
+    // In this implementation, pointers are just indexes into the arena.
     // Pointer to the hashtable of prefixes.
     static nint hash;
    
@@ -48,9 +49,15 @@ public static class MarkovArenaGenerator
         System.Span<byte> text = ar.AllocSpan<byte>(MAXTEXT);
         var s = File.Slurp(path, text);
 
+        // I could pass the pointer to the hashtable to the functions below.
+        // Not clear why I am passing most things, but not all of them.
         var h = ar.AllocSpan<nint>(NHASH);
         (hash, _) = ar.ToPtrAndLength(h);
 
+        // This is a trickiness of working with `ref struct`.
+        // If you don't pass it by ref, the compiler will copy it.
+        // And the copy will be modified, not the original, causing hard to detect bugs.
+        // Given that, the Arena should probably not be a `ref struct`.
         Build(ref ar, s);
         Generate(ref ar, s, nwords);
     }
@@ -61,7 +68,7 @@ public static class MarkovArenaGenerator
         Random rnd  = new (seed);
         var prefix  = (int)rnd.Next() % NHASH;
 
-        // Find the first non-empty prefix after the random one.
+        // This is how you go from a pointer to an entity.
         var hashTbl = ar.ToSpan<nint>(hash, NHASH);
         while(hashTbl[prefix] == 0 && prefix < NHASH)
             prefix++;
@@ -69,6 +76,8 @@ public static class MarkovArenaGenerator
         if(prefix == NHASH)
             Environment.Fail("No non-empty prefix"u8);
 
+        // Rehidrate the prefix from the pointer.
+        // The `ref` syntax is heavy for these operations.
         ref var pre = ref ar.ToRef<Prefix>(hashTbl[prefix]);
 
         for(var i = 0; i < nwords; i++)
@@ -77,7 +86,6 @@ public static class MarkovArenaGenerator
             if(sidx == 0)
                 Environment.Fail("Prefix without suffix"u8);
 
-            // Count the number of suffixes
             var ns = 0;
             while(sidx != 0)
             {
@@ -85,7 +93,6 @@ public static class MarkovArenaGenerator
                 sidx = ar.ToRef<Suffix>(sidx).Next;
             }
 
-            // Pick a random one
             var idx = rnd.Next() % ns;
             sidx = pre.FirstSuffix;
             while(idx > 0)
@@ -94,13 +101,11 @@ public static class MarkovArenaGenerator
                 idx--;
             }
 
-            // Print the suffix
             var suffix = ar.ToRef<Suffix>(sidx).SuffixText;
             var word = MemToStr(text, suffix);
             Console.Write(word);
             Console.Write(" "u8);
 
-            // Rotate the prefix words to the left and add the suffix to the end.
             Word_Tuple newPrefix = default;
             newPrefix[0] = pre.PrefixWords[1];
             newPrefix[1] = suffix;
@@ -112,13 +117,12 @@ public static class MarkovArenaGenerator
         Console.WriteLine(""u8);
     }
 
-    // Rehidrate Mem as a proper Str8
     static Str8 MemToStr(Str8 text, Mem mem)
     {
         var buf = text.Slice(mem.Start, mem.End - mem.Start);
         return buf;
     }
-    // Same hash function as the original implementation.
+    
     static int Hash(Str8 text, Word_Tuple words)
     {
         const int MULTIPLIER = 31;
@@ -134,19 +138,7 @@ public static class MarkovArenaGenerator
     static bool IsPrefixEmpty(ref Prefix p) =>
         p.PrefixWords[0].Start == 0 && p.PrefixWords[0].End == 0;
 
-    static void PrintPrefix(ref Prefix p, Str8 text)
-    {
-        for(var i = 0; i < NPREF; i++)
-        {
-            var word = MemToStr(text, p.PrefixWords[i]);
-            Console.Write(word);
-            Console.Write(" "u8);
-        }
-        Console.WriteLine(""u8);
-    }
-
-    // This follows the original implementation, but uses the next slot in the prefix buffer instead of malloc.
-    static unsafe ref Prefix Lookup(ref Arena ar, Str8 text, Word_Tuple words, bool create)
+    static ref Prefix Lookup(ref Arena ar, Str8 text, Word_Tuple words, bool create)
     {
         var hashTbl = ar.ToSpan<nint>(hash, NHASH);
 
@@ -160,7 +152,6 @@ public static class MarkovArenaGenerator
         while(sp != 0)
         {
             p = ref ar.ToRef<Prefix>(sp);
-            //PrintPrefix(ref p, text);
             int i;
 
             for (i = 0; i < NPREF; i++)
@@ -182,7 +173,6 @@ public static class MarkovArenaGenerator
             p.PrefixWords = words;
             p.FirstSuffix = 0;
 
-            //PrintPrefix(ref nsp, text);
             p.Next = hashTbl[h1];
             hashTbl[h1] = ar.ToPtr(ref p);
         }
@@ -204,7 +194,6 @@ public static class MarkovArenaGenerator
         AddSuffix(ref ar, ref prefix, suffix);
     }
     
-    // TODO: perhaps a better text could be generated by using a more sophisticated tokenizer.
     static Mem GetWord(Str8 text, int start)
     {
         // Skip initial spaces
@@ -223,7 +212,6 @@ public static class MarkovArenaGenerator
         Word_Tuple prefix = default;
 
 
-        // Fill out the prefix buffer with the first words in the text.
         for(var w = 0; w < NPREF; w++)
         {
            var word = GetWord(text, idx);
@@ -233,7 +221,6 @@ public static class MarkovArenaGenerator
             idx = word.End;
         }
 
-        // And just keep 1. Getting a new suffix 2. Adding (prefix, suffix) to the data structure 3. Rotating the prefix buffer.
         while(true) {
             var suffix = GetWord(text, idx);
             if(suffix.Start == suffix.End)

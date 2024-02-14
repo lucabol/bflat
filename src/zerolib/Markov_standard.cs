@@ -4,6 +4,10 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
+// This is the standard implementation of the Markov generator in `vanilla` C#.
+// It is the most straightforward implementation how could think of.
+// Many optimizations are possible, but the goal is to compare programming models.
+
 public static class MarkovStandardGenerator
 {
     const int NWORDS = 2;
@@ -11,12 +15,15 @@ public static class MarkovStandardGenerator
     public static void Run(string path, int nwords)
     {
         var text = File.ReadAllText(path);
+
+        // Oh boy, the allocations ...
         var words = text.Split(' ');
 
         var hash = Build(words);
         Generate(hash, nwords);
     }
 
+    // The key of the hashtable is an array of strings, needing a special equality comparer.
     class StringArrayEqualityComparer : EqualityComparer<string[]>
     {
         public override bool Equals(string[]? x, string[]? y) {
@@ -50,6 +57,7 @@ public static class MarkovStandardGenerator
         }
         return hash;
     }
+
     static void Generate(Dictionary<string[], List<string>> hash, int nwords)
     {
         var rand  = new Random();
